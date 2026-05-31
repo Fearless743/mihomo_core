@@ -28,17 +28,31 @@ jobs:
         id: check
         run: |
           if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            VERSION="${{ github.event.inputs.version }}"
+            if ! echo "$VERSION" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "Error: Invalid version format '$VERSION'. Expected format: v1.2.3"
+              exit 1
+            fi
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
             echo "should_build=true" >> $GITHUB_OUTPUT
             exit 0
           fi
 
           # Get latest mihomo release tag
           LATEST=$(curl -s "https://api.github.com/repos/${{ env.MIHOMO_REPO }}/releases/latest" | jq -r '.tag_name')
+          if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
+            echo "Error: Failed to fetch latest mihomo release"
+            exit 1
+          fi
           echo "Latest mihomo version: $LATEST"
 
           # Check if we already built this version
-          EXISTING=$(curl -s "https://api.github.com/repos/${{ env.CORE_REPO }}/releases/tags/core-$LATEST" 2>/dev/null | jq -r '.tag_name // empty')
+          HTTP_CODE=$(curl -s -o /tmp/release.json -w "%{http_code}" "https://api.github.com/repos/${{ env.CORE_REPO }}/releases/tags/core-$LATEST")
+          if [ "$HTTP_CODE" = "200" ]; then
+            EXISTING=$(jq -r '.tag_name // empty' /tmp/release.json)
+          else
+            EXISTING=""
+          fi
 
           if [ "$EXISTING" = "core-$LATEST" ]; then
             echo "Version $LATEST already built, skipping."
@@ -106,6 +120,12 @@ jobs:
           go-version: "1.26.0"
           cache-dependency-path: core/go.sum
 
+      - name: Update mihomo dependency
+        run: |
+          cd core
+          go get github.com/metacubex/mihomo@${{ needs.check.outputs.version }}
+          go mod tidy
+
       - name: Build core
         env:
           CGO_ENABLED: "0"
@@ -166,6 +186,12 @@ jobs:
         uses: nttld/setup-ndk@v1
         with:
           ndk-version: r27c
+
+      - name: Update mihomo dependency
+        run: |
+          cd core
+          go get github.com/metacubex/mihomo@${{ needs.check.outputs.version }}
+          go mod tidy
 
       - name: Build libclash.so
         env:
