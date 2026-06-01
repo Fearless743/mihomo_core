@@ -140,9 +140,11 @@ jobs:
 
       - name: Compress
         run: |
-          gzip -9 FlClashCore-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.ext }}
-          mv FlClashCore-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.ext }}.gz \
-             FlClashCore-${{ matrix.platform }}-${{ matrix.arch }}-v${{ needs.check.outputs.version }}.gz
+          ORIGINAL="FlClashCore-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.ext }}"
+          COMPRESSED="${ORIGINAL}.gz"
+          FINAL="FlClashCore-${{ matrix.platform }}-${{ matrix.arch }}-v${{ needs.check.outputs.version }}${{ matrix.ext }}.gz"
+          gzip -9 "$ORIGINAL"
+          mv "$COMPRESSED" "$FINAL"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
