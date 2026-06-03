@@ -142,7 +142,7 @@ jobs:
         run: |
           ORIGINAL="FlClashCore-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.ext }}"
           COMPRESSED="${ORIGINAL}.gz"
-          FINAL="FlClashCore-${{ matrix.platform }}-${{ matrix.arch }}-v${{ needs.check.outputs.version }}${{ matrix.ext }}.gz"
+          FINAL="FlClashCore-${{ matrix.platform }}-${{ matrix.arch }}-${{ needs.check.outputs.version }}${{ matrix.ext }}.gz"
           gzip -9 "$ORIGINAL"
           mv "$COMPRESSED" "$FINAL"
 
@@ -216,7 +216,7 @@ jobs:
         run: |
           gzip -9 libclash-android-${{ matrix.abi }}.so
           mv libclash-android-${{ matrix.abi }}.so.gz \
-             libclash-android-${{ matrix.abi }}-v${{ needs.check.outputs.version }}.so.gz
+             libclash-android-${{ matrix.abi }}-${{ needs.check.outputs.version }}.so.gz
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -244,7 +244,7 @@ jobs:
           body: |
             Mihomo core ${{ needs.check.outputs.version }}
 
-            **Desktop**: FlClashCore-{platform}-{arch}-v{version}.gz
-            **Android**: libclash-android-{abi}-v{version}.so.gz
+            **Desktop**: FlClashCore-{platform}-{arch}-{version}.gz
+            **Android**: libclash-android-{abi}-{version}.so.gz
           prerelease: false
           files: dist/*
